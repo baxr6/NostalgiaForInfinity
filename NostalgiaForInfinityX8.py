@@ -279,6 +279,9 @@ class NostalgiaForInfinityX8(IStrategy):
   futures_max_open_trades_long = 0
   futures_max_open_trades_short = 0
 
+  # Limit the number of open signal 507 trades (short, file only)
+  short_507_max_slots = 5
+
   # Based on the the first entry (regardless of rebuys)
   stop_threshold_spot = 0.10
   stop_threshold_futures = 0.10
@@ -5450,6 +5453,12 @@ class NostalgiaForInfinityX8(IStrategy):
       return self._handle_top_coins_mode(pair, current_time)
     if all(c in long_scalp_mode_tags for c in entry_tags):
       return self._handle_scalp_mode(pair, current_time)
+    if is_short_side and "507" in entry_tags:
+      open_trades = Trade.get_trades_proxy(is_open=True)
+      num_open_short_507 = sum(1 for t in open_trades if "507" in (t.enter_tag or "").split())
+      if num_open_short_507 >= self.short_507_max_slots:
+        log.info(f"[{current_time}] Cancelling entry for {pair} due to signal 507 slots limit reached.")
+        return False
 
     # Long/Short Slot Validation (only in futures mode)
     if self.is_futures_mode:
@@ -6589,6 +6598,7 @@ class NostalgiaForInfinityX8(IStrategy):
     # Grind mode
     pair_coin = metadata["pair"].partition("/")[0]
     num_open_long_grind_mode = 0
+    num_open_short_507 = 0
     is_pair_long_grind_mode = pair_coin in self.grind_mode_coins
     if not is_backtest:
       open_trades = Trade.get_trades_proxy(is_open=True)
@@ -6598,6 +6608,8 @@ class NostalgiaForInfinityX8(IStrategy):
           enter_tags = enter_tag.split()
           if all(c in self.long_grind_mode_tags for c in enter_tags):
             num_open_long_grind_mode += 1
+          if "507" in enter_tags:
+            num_open_short_507 += 1
     # Top Coins mode
     is_pair_long_top_coins_mode = pair_coin in top_coins_mode_coins
     is_pair_short_top_coins_mode = pair_coin in top_coins_mode_coins
@@ -26384,6 +26396,7 @@ class NostalgiaForInfinityX8(IStrategy):
         if short_entry_condition_index == 507:
           # Protections
           short_entry_logic.append(num_empty_288 <= allowed_empty_candles_288)
+          short_entry_logic.append(num_open_short_507 < self.short_507_max_slots)
           short_entry_logic.append(protections_short_global == True)
           # not a coin in its own top-third 28 day run within the last 5 days
           short_entry_logic.append(mom_28_hot_1d < 0.5)

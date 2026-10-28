@@ -3,11 +3,13 @@
 import re
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
 import pytest
 
+import NostalgiaForInfinityX8 as nfix8_module
 from NostalgiaForInfinityX8 import NostalgiaForInfinityX8
 
 STRATEGY = Path(__file__).resolve().parents[2] / "NostalgiaForInfinityX8.py"
@@ -285,7 +287,8 @@ def test_the_chains_live_inside_one_protection_append():
   # Then: the chains are AND-ed operands of one append, not an append each.
   for chain in _chains():
     assert f"short_entry_logic.append({chain})" not in protections
-  assert protections.count("short_entry_logic.append(") == 4
+  # (empty candles, slot cap, global guard, hot coin, and the one chain append)
+  assert protections.count("short_entry_logic.append(") == 5
 
 
 def test_each_chain_carries_a_comment():
@@ -361,6 +364,39 @@ def test_the_protections_keep_the_empty_candle_global_and_hot_coin_guards():
 def test_the_signal_is_disabled_by_default():
   assert NostalgiaForInfinityX8.short_entry_signal_params["short_entry_condition_507_enable"] is False
   assert "507" in NostalgiaForInfinityX8.short_normal_mode_tags
+
+
+def test_the_signal_holds_at_most_five_slots_set_in_the_file_only():
+  # Then: the cap lives in the file, and the config can not change it (not a safe parameter).
+  assert NostalgiaForInfinityX8.short_507_max_slots == 5
+  assert '"short_507_max_slots"' not in _src()
+  # And: the 507 block turns the signal off at the cap (live), like grind mode does for 120.
+  assert "short_entry_logic.append(num_open_short_507 < self.short_507_max_slots)" in _block()
+
+
+def _confirm(monkeypatch, open_tags: list[str], entry_tag: str, side: str = "short") -> bool:
+  strategy = NostalgiaForInfinityX8.__new__(NostalgiaForInfinityX8)
+  strategy.is_futures_mode = True
+  strategy.dp = MagicMock()
+  strategy.dp.get_analyzed_dataframe.return_value = (pd.DataFrame(), None)
+  trades = [SimpleNamespace(enter_tag=t, trade_direction="short") for t in open_tags]
+  monkeypatch.setattr(nfix8_module.Trade, "get_trades_proxy", staticmethod(lambda **_: trades))
+  return strategy.confirm_trade_entry(
+    "BTC/USDT:USDT", "limit", 1.0, 100.0, "GTC", pd.Timestamp("2026-10-28", tz="UTC"), entry_tag, side
+  )
+
+
+def test_a_sixth_507_entry_is_refused(monkeypatch):
+  # Given: five 507 shorts already open.
+  # Then: the next 507 entry is refused, at order time too (the entry logic count is live only).
+  assert _confirm(monkeypatch, ["507"] * 5, "507 ") is False
+
+
+def test_a_fifth_507_entry_and_other_shorts_still_enter(monkeypatch):
+  assert _confirm(monkeypatch, ["507"] * 4, "507 ") is True
+  # And: other short signals do not count against, and are not held by, the 507 cap.
+  assert _confirm(monkeypatch, ["507"] * 5, "562 ") is True
+  assert _confirm(monkeypatch, ["562"] * 6, "507 ") is True
 
 
 @pytest.fixture
