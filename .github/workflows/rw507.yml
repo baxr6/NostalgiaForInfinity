@@ -35,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          docker pull -q ghcr.io/iterativv/ci-strategy-backtesting:latest &
+          docker pull -q ghcr.io/iterativv/ci-strategy-backtesting@sha256:d407a1563f586a50bbc52b6e512cedc65cfc8d9681e5bf5391186f9747d953a0 &
           gh release download rw507-data-v1 -R "${{ github.repository }}" -D dl \
             -p "${{ matrix.y }}_${{ matrix.s }}.tar.zst" -p "markets_${{ matrix.mk || 'rw' }}.json.zst" -p btc.tar.zst
           mkdir -p data && zstd -dc "dl/${{ matrix.y }}_${{ matrix.s }}.tar.zst" | tar -x -C data
@@ -46,7 +46,7 @@ jobs:
         run: |
           docker run --rm --network none -v "$PWD:/w" -w /w --entrypoint "" \
             -e FT_MARKETS_FILE=/w/rw507/mk/markets_rw.json -e PYTHONPATH=/w/rw507/mk \
-            ghcr.io/iterativv/ci-strategy-backtesting:latest \
+            ghcr.io/iterativv/ci-strategy-backtesting@sha256:d407a1563f586a50bbc52b6e512cedc65cfc8d9681e5bf5391186f9747d953a0 \
             bash rw507/run_gh.sh "${{ matrix.arm }}" "${{ matrix.y }}" "${{ matrix.s }}"
       - uses: actions/upload-artifact@v7
         if: always()

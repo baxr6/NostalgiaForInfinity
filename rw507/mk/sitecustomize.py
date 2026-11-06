@@ -9,3 +9,14 @@ if os.environ.get("FT_MARKETS_FILE"):
     return self.set_markets(_M["markets"], _M["currencies"])
   ccxt.binance.load_markets = _load
   ccxt_async.binance.load_markets = _aload
+  # leverage tiers for the pairs rebuilt in the market list (gone from Binance and from freqtrade's tier file): copy a similar pair
+  import freqtrade.exchange.binance as _fb
+  _TPL = {"EOS/USDT:USDT": "XLM/USDT:USDT", "SXP/USDT:USDT": "ZIL/USDT:USDT", "AERGO/USDT:USDT": "ZIL/USDT:USDT"}
+  _orig_tiers = _fb.Binance.load_leverage_tiers
+  def _tiers(self):
+    t = _orig_tiers(self)
+    for p, src in _TPL.items():
+      if p not in t and src in t:
+        t[p] = [dict(x, symbol=p) if "symbol" in x else dict(x) for x in t[src]]
+    return t
+  _fb.Binance.load_leverage_tiers = _tiers
