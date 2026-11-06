@@ -37,8 +37,9 @@ jobs:
         run: |
           docker pull -q ghcr.io/iterativv/ci-strategy-backtesting:latest &
           gh release download rw507-data-v1 -R "${{ github.repository }}" -D dl \
-            -p "${{ matrix.y }}_${{ matrix.s }}.tar.zst" -p "markets_${{ matrix.mk || 'rw' }}.json.zst"
+            -p "${{ matrix.y }}_${{ matrix.s }}.tar.zst" -p "markets_${{ matrix.mk || 'rw' }}.json.zst" -p btc.tar.zst
           mkdir -p data && zstd -dc "dl/${{ matrix.y }}_${{ matrix.s }}.tar.zst" | tar -x -C data
+          zstd -dc dl/btc.tar.zst | tar -x -C data  # BTC informatives (X8 reads BTC on every timeframe)
           zstd -dq "dl/markets_${{ matrix.mk || 'rw' }}.json.zst" -o rw507/mk/markets_rw.json
           rm -rf dl && wait && chmod -R a+rwX rw507 data
       - name: Backtest
