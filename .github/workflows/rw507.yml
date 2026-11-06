@@ -1,0 +1,71 @@
+name: rw507 backtests
+
+# 507 rework backtests. Push a new rw507/jobs.json (list of {arm, y, s}) to this branch to run it.
+on:
+  push:
+    branches: [rw507-ci]
+    paths: ["rw507/jobs.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: m
+        run: echo "matrix=$(jq -c . rw507/jobs.json)" >> "$GITHUB_OUTPUT"
+
+  backtest:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Data and markets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          docker pull -q ghcr.io/iterativv/ci-strategy-backtesting:latest &
+          gh release download rw507-data-v1 -R "${{ github.repository }}" -D dl \
+            -p "${{ matrix.y }}_${{ matrix.s }}.tar.zst" -p "markets_${{ matrix.mk || 'rw' }}.json.zst"
+          mkdir -p data && zstd -dc "dl/${{ matrix.y }}_${{ matrix.s }}.tar.zst" | tar -x -C data
+          zstd -dq "dl/markets_${{ matrix.mk || 'rw' }}.json.zst" -o rw507/mk/markets_rw.json
+          rm -rf dl && wait && chmod -R a+rwX rw507 data
+      - name: Backtest
+        run: |
+          docker run --rm --network none -v "$PWD:/w" -w /w --entrypoint "" \
+            -e FT_MARKETS_FILE=/w/rw507/mk/markets_rw.json -e PYTHONPATH=/w/rw507/mk \
+            ghcr.io/iterativv/ci-strategy-backtesting:latest \
+            bash rw507/run_gh.sh "${{ matrix.arm }}" "${{ matrix.y }}" "${{ matrix.s }}"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rw-${{ matrix.arm }}-${{ matrix.y }}-${{ matrix.s }}
+          path: rw507/out/
+          retention-days: 30
+
+  collect:
+    needs: backtest
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: rw-*
+          path: out
+          merge-multiple: true
+      - run: find out -name row.tsv | sort | xargs cat > results.tsv; wc -l results.tsv; cat results.tsv
+      - uses: actions/upload-artifact@v7
+        with:
+          name: results
+          path: results.tsv
