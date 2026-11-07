@@ -7,7 +7,7 @@ echo "{\"pairlists\":[{\"method\":\"StaticPairList\"}],\"exchange\":{\"name\":\"
 echo "=== $ARM $Y s$S $TR start $(date -u +%T)"
 freqtrade backtesting --config $RW/cfg/exampleconfig.json --config $RW/cfg/trading_mode-futures.json --config $RW/cfg/rw.json \
   --config $O/pl.json --strategy NostalgiaForInfinityX8_507 --strategy-path $RW/arms/$ARM --userdir $O/ud \
-  --datadir /w/data/binance --timerange $TR --fee 0.0005 --cache none --export trades > $O/run.log 2>&1
+  --datadir /w/data/binance --timerange $TR --fee 0.0005 --cache none --export ${EXPORT:-trades} > $O/run.log 2>&1
 RC=$?; ls $O/ud/backtest_results/*.zip >/dev/null 2>&1 || RC=9
 grep -E "is not compatible|Removing" $O/run.log | head -3
 if [ $RC -ne 0 ]; then tail -20 $O/run.log; echo "FAILED rc $RC"; exit 1; fi

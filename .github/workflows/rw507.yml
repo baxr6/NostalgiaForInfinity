@@ -45,7 +45,7 @@ jobs:
       - name: Backtest
         run: |
           docker run --rm --network none -v "$PWD:/w" -w /w --entrypoint "" \
-            -e FT_MARKETS_FILE=/w/rw507/mk/markets_rw.json -e PYTHONPATH=/w/rw507/mk \
+            -e FT_MARKETS_FILE=/w/rw507/mk/markets_rw.json -e PYTHONPATH=/w/rw507/mk -e EXPORT=${{ matrix.ex || 'trades' }} \
             ghcr.io/iterativv/ci-strategy-backtesting@sha256:d407a1563f586a50bbc52b6e512cedc65cfc8d9681e5bf5391186f9747d953a0 \
             bash rw507/run_gh.sh "${{ matrix.arm }}" "${{ matrix.y }}" "${{ matrix.s }}"
       - uses: actions/upload-artifact@v7
