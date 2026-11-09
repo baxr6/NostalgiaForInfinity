@@ -36,8 +36,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           docker pull -q ghcr.io/iterativv/ci-strategy-backtesting@sha256:d407a1563f586a50bbc52b6e512cedc65cfc8d9681e5bf5391186f9747d953a0 &
-          gh release download rw507-data-v1 -R "${{ github.repository }}" -D dl \
-            -p "${{ matrix.y }}_${{ matrix.s }}.tar.zst" -p "markets_${{ matrix.mk || 'rw' }}.json.zst" -p btc.tar.zst
+          for i in 1 2 3 4 5; do  # release downloads hit transient HTTP 500s
+            gh release download rw507-data-v1 -R "${{ github.repository }}" -D dl --clobber \
+              -p "${{ matrix.y }}_${{ matrix.s }}.tar.zst" -p "markets_${{ matrix.mk || 'rw' }}.json.zst" -p btc.tar.zst && break
+            [ $i = 5 ] && exit 1; sleep $((i * 15))
+          done
           mkdir -p data && zstd -dc "dl/${{ matrix.y }}_${{ matrix.s }}.tar.zst" | tar -x -C data
           zstd -dc dl/btc.tar.zst | tar -x -C data  # BTC informatives (X8 reads BTC on every timeframe)
           zstd -dq "dl/markets_${{ matrix.mk || 'rw' }}.json.zst" -o rw507/mk/markets_rw.json
