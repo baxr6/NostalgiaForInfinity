@@ -45,6 +45,14 @@ jobs:
           zstd -dc dl/btc.tar.zst | tar -x -C data  # BTC informatives (X8 reads BTC on every timeframe)
           zstd -dq "dl/markets_${{ matrix.mk || 'rw' }}.json.zst" -o rw507/mk/markets_rw.json
           rm -rf dl && wait && chmod -R a+rwX rw507 data
+      - name: Swap (F)
+        if: matrix.y == 'F'
+        run: |
+          sudo swapoff -a || true; sudo rm -f /mnt/swapfile || true
+          D=/; [ -d /mnt ] && [ $(df -BG --output=avail /mnt | tail -1 | tr -dc 0-9) -gt $(df -BG --output=avail / | tail -1 | tr -dc 0-9) ] && D=/mnt
+          G=$(( $(df -BG --output=avail $D | tail -1 | tr -dc 0-9) - 4 )); [ $G -gt 16 ] && G=16
+          echo "swap ${G}G on $D"; if [ $G -ge 4 ]; then sudo fallocate -l ${G}G $D/swapfile2 && sudo chmod 600 $D/swapfile2 && sudo mkswap $D/swapfile2 >/dev/null && sudo swapon $D/swapfile2 || echo "swap setup failed"; fi
+          free -g
       - name: Backtest
         run: |
           docker run --rm --network none -v "$PWD:/w" -w /w --entrypoint "" \
