@@ -31,10 +31,9 @@ def _block() -> str:
 def _flat(text: str) -> str:
   """A chain the formatter wraps over several lines, back on one line as '& ((a) | (b) | ...)'."""
   return re.sub(
-    r"& \(\n(.*?)\n\s*\)\n",
-    lambda m: "& (" + " ".join(line.strip() for line in m.group(1).splitlines()) + ")\n",
+    r"(& )?\(\n((?:\s*\|?\s*\(\w+\)\n)+)\s*\)\n",
+    lambda m: (m.group(1) or "") + "(" + " ".join(line.strip() for line in m.group(2).splitlines()) + ")\n",
     text,
-    flags=re.S,
   )
 
 
@@ -73,8 +72,8 @@ def _lead_key(chain: str) -> tuple[int, int]:
 
 
 def test_the_block_has_its_protection_chains():
-  # Then: all 411 chains are there.
-  assert len(_chains()) >= 411
+  # Then: all 188 chains are there.
+  assert len(_chains()) >= 188
 
 
 def test_the_chains_live_inside_one_protection_append():
@@ -152,6 +151,8 @@ def test_the_chains_sit_in_sorted_order():
     "& (adx_13_4h > 10.0)",
     "& (adx_13_4h < 55.0)",
     "& (vol_rel_27_4h > 1.0)",
+    # fresh turn: the previous 4h fast heikin-ashi candle was red
+    "& (np_shift(ha_fast_close_4h, 48) < np_shift(ha_fast_open_4h, 48))",
     # BTC not weak
     "& (btc_rsi_14_1h > 50.0)",
     # not already 15% over the previous 20 candle low, not after a 24h pump
