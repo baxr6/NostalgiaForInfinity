@@ -66,7 +66,7 @@ warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 #############################################################################################################
 
 
-class NostalgiaForInfinityX8(IStrategy):
+class NostalgiaForInfinityX8_507(IStrategy):
   INTERFACE_VERSION = 3
 
   def version(self) -> str:
@@ -1116,7 +1116,7 @@ class NostalgiaForInfinityX8(IStrategy):
     # "short_entry_condition_504_enable": True,
     "short_entry_condition_505_enable": False,
     "short_entry_condition_506_enable": False,
-    "short_entry_condition_507_enable": False,
+    "short_entry_condition_507_enable": True,
     # "short_entry_condition_541_enable": True,
     "short_entry_condition_542_enable": True,
     "short_entry_condition_543_enable": False,
