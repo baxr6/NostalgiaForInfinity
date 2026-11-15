@@ -3622,8 +3622,7 @@ class NostalgiaForInfinityX8_507(IStrategy):
     plus_di_14 = ta_plus_di(high_np, low_np, close_np, timeperiod=14)
     minus_di_14 = ta_minus_di(high_np, low_np, close_np, timeperiod=14)
 
-    # ADX 13, ATR 14, relative volume, fast heikin-ashi — signal 14 (experimental): the 4h trigger candle
-    adx_13 = ta_adx(high_np, low_np, close_np, timeperiod=13)
+    # ATR 14, relative volume, fast heikin-ashi — signal 14 (experimental): the 4h trigger candle
     atr_14 = ta_atr(high_np, low_np, close_np, timeperiod=14)
     vol_ma_27 = np_shift(ta_sma(volume_np, timeperiod=27), 1)
     vol_rel_27 = np.divide(volume_np, vol_ma_27, out=np.full_like(vol_ma_27, np.nan), where=vol_ma_27 > 0)
@@ -3637,7 +3636,6 @@ class NostalgiaForInfinityX8_507(IStrategy):
     # =========================================================================
     new_cols = pd.DataFrame(
       {
-        "ADX_13": adx_13,
         "ATR_14": atr_14,
         "VOL_REL_27": vol_rel_27,
         "HA_FAST_OPEN": ha_fast_open,
@@ -4425,11 +4423,6 @@ class NostalgiaForInfinityX8_507(IStrategy):
     dc_low_7d_col = np_shift(ta_min(close_np, timeperiod=2016), 1)
 
     # =========================================================================
-    # Donchian 20-candle low — signal 14 (experimental): not buying far above the recent low
-    # =========================================================================
-    dc_low_20_col = np_shift(ta_min(low_np, timeperiod=20), 1)
-
-    # =========================================================================
     # Assign dataframes
     # =========================================================================
     new_cols = pd.DataFrame(
@@ -4450,7 +4443,6 @@ class NostalgiaForInfinityX8_507(IStrategy):
         "PB_HAMMER": hammer_col,
         "PB_STAR": star_col,
         "DC_HIGH_7D": dc_high_7d_col,
-        "DC_LOW_20": dc_low_20_col,
         "DC_LOW_7D": dc_low_7d_col,
         "ENGULF_BULL": engulf_bull_col,
         "ENGULF_BEAR": engulf_bear_col,
@@ -6133,13 +6125,11 @@ class NostalgiaForInfinityX8_507(IStrategy):
     close_4h = np_view("close_4h")
     ha_fast_open_4h = np_view("HA_FAST_OPEN_4h")
     ha_fast_close_4h = np_view("HA_FAST_CLOSE_4h")
-    adx_13_4h = np_view("ADX_13_4h")
     atr_14_4h = np_view("ATR_14_4h")
     vol_rel_27_4h = np_view("VOL_REL_27_4h")
     macdh_12_26_9_1h = np_view("MACDh_12_26_9_1h")
     plus_di_14_1h = np_view("PLUS_DI_14_1h")
     minus_di_14_1h = np_view("MINUS_DI_14_1h")
-    dc_low_20 = np_view("DC_LOW_20")
     global_protections_short_pump = np_view("global_protections_short_pump")
     global_protections_short_dump = np_view("global_protections_short_dump")
     roc_2 = np_view("ROC_2")
@@ -11546,7 +11536,7 @@ class NostalgiaForInfinityX8_507(IStrategy):
             & ((rsi_3_1h_gt_35) | (stochrsi_k_4h_lt_80) | (aroonu_14_1d_lt_90))
             # 1h overbought, 1h not high, 4h down move
             & ((rsi_3_1h_lt_85) | (stochrsi_k_1h_gt_40) | (rsi_3_4h_gt_55))
-            # 1h overbought, 4h uptrend, 4h not high, 1d not high
+            # 1h overbought, 4h uptrend, 4h & 1d not high
             & ((rsi_3_1h_lt_90) | (aroonu_14_4h_lt_60) | (stochrsi_k_4h_gt_60) | (stochrsi_k_1d_gt_70))
             # 1h fresh high, 1h not high, 4h overbought
             & ((aroonu_14_1h_lt_90) | (stochrsi_k_1h_gt_50) | (rsi_3_4h_lt_85))
