@@ -70,7 +70,7 @@ class NostalgiaForInfinityX8_507(IStrategy):
   INTERFACE_VERSION = 3
 
   def version(self) -> str:
-    return "v18.0.248-stT10K1"
+    return "v18.0.248-bkstT10K2"
 
   stoploss = -0.99
 
@@ -66564,10 +66564,10 @@ class HoldsCache(Cache):
 
 
 # =============================================================================================
-# book-stress long block experiment (20/11/2026): T 10 K 1 P 0.0
+# book-stress long block experiment (20/11/2026): T 10 K 2 P 0.0
 # =============================================================================================
 import atexit as _sx, json as _sj, os as _so, random as _sr
-_st = {"T": 10, "K": 1, "P": 0.0, "refused": []}
+_st = {"T": 10, "K": 2, "P": 0.0, "refused": []}
 _st_rng = _sr.Random(301)
 _orig_cte_st = NostalgiaForInfinityX8_507.confirm_trade_entry
 def _cte_st(self, pair, order_type, amount, rate, time_in_force, current_time, entry_tag, side, **kwargs):

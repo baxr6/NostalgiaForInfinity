@@ -70,7 +70,7 @@ class NostalgiaForInfinityX8_507(IStrategy):
   INTERFACE_VERSION = 3
 
   def version(self) -> str:
-    return "v18.0.248-slN15"
+    return "v18.0.248-bkslN15"
 
   stoploss = -0.99
 

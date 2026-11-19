@@ -70,7 +70,7 @@ class NostalgiaForInfinityX8_507(IStrategy):
   INTERFACE_VERSION = 3
 
   def version(self) -> str:
-    return "v18.0.248-slF8"
+    return "v18.0.248-bkstT15K1"
 
   stoploss = -0.99
 
@@ -66564,60 +66564,32 @@ class HoldsCache(Cache):
 
 
 # =============================================================================================
-# rw507 experiment: book drawdown gate, round 2 (18/11/2026). Equity = starting balance + closed P&L + open P&L (open trades
-# at the latest candle close). Shut when equity <= GATE["close"] below its running peak. While shut, track the equity low.
-# Reopen when equity >= low * (1 + GATE["rebound"]) or the gate has been shut GATE["max_h"] hours (after >= GATE["min_h"]).
-# On reopen the peak resets to current equity. While shut, new entries on GATE["sides"] are refused (adds too if GATE["adds"]).
-# Log (GATE_LOG): events, 4-hourly state, refused entries.
+# book-stress long block experiment (20/11/2026): T 15 K 1 P 0.0
 # =============================================================================================
-GATE = {"sides": ("long", "short"), "adds": False, "sched": "dump.json"}
-_g = {"peak": None, "low": None, "shut": False, "since": None, "last": None, "events": [], "state": [], "refused": []}
+import atexit as _sx, json as _sj, os as _so, random as _sr
+_st = {"T": 15, "K": 1, "P": 0.0, "refused": []}
+_st_rng = _sr.Random(301)
+_orig_cte_st = NostalgiaForInfinityX8_507.confirm_trade_entry
+def _cte_st(self, pair, order_type, amount, rate, time_in_force, current_time, entry_tag, side, **kwargs):
+  if side == "long":
+    if _st["P"] > 0:
+      hit = _st_rng.random() < _st["P"]; n = -1
+    else:
+      n = 0
+      for t in Trade.get_trades_proxy(is_open=True):
+        if t.is_short or t.pair == pair or not t.open_rate:
+          continue
+        df, _ = self.dp.get_analyzed_dataframe(t.pair, self.timeframe)
+        if df is not None and len(df) and float(df["close"].iloc[-1]) / t.open_rate - 1.0 <= -_st["T"] / 100.0:
+          n += 1
+      hit = n >= _st["K"]
+    if hit:
+      _st["refused"].append((current_time.isoformat(), pair, side, entry_tag, n))
+      return False
+  return _orig_cte_st(self, pair, order_type, amount, rate, time_in_force, current_time, entry_tag, side, **kwargs)
+NostalgiaForInfinityX8_507.confirm_trade_entry = _cte_st
 
-import json, os
-_SCHED = []
-_ALWAYS = True  # slump arm slF8: schedule always, falling-coin cut 0.08
-
-def _gate_update(self, current_time):  # market dump schedule: global equal-weight index, see openpnl/gate/mkdump.py
-  if _g["last"] == current_time:
-    return
-  _g["last"] = current_time
-  shut = any(s <= current_time < e for s, e in _SCHED)
-  if shut != _g["shut"]:
-    _g["events"].append((current_time.isoformat(), "shut" if shut else "open", "dump", 0.0, 0.0, 0.0, 0.0))
-    _g["shut"] = shut
-
-_orig_bls = NostalgiaForInfinityX8_507.bot_loop_start
-def _bls(self, current_time, **kwargs):
-  _gate_update(self, current_time)
-  return _orig_bls(self, current_time, **kwargs)
-NostalgiaForInfinityX8_507.bot_loop_start = _bls
-
-_orig_cte = NostalgiaForInfinityX8_507.confirm_trade_entry
-def _cte(self, pair, order_type, amount, rate, time_in_force, current_time, entry_tag, side, **kwargs):
-  _gate_update(self, current_time)
-  if (_g["shut"] or _ALWAYS) and side == "long":
-    df, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
-    if df is not None and len(df) and df["EMA_200_4h"].iloc[-1] > 0:
-      dist = float(df["close"].iloc[-1]) / float(df["EMA_200_4h"].iloc[-1]) - 1.0
-      if dist < -0.08:  # coin falling: below its 4h EMA200 by more than B
-        _g["refused"].append((current_time.isoformat(), pair, side, entry_tag, round(dist, 4)))
-        return False
-  return _orig_cte(self, pair, order_type, amount, rate, time_in_force, current_time, entry_tag, side, **kwargs)
-NostalgiaForInfinityX8_507.confirm_trade_entry = _cte
-
-if GATE["adds"]:
-  _orig_atp = NostalgiaForInfinityX8_507.adjust_trade_position
-  def _atp(self, trade, current_time, *args, **kwargs):
-    res = _orig_atp(self, trade, current_time, *args, **kwargs)
-    amt = res[0] if isinstance(res, tuple) else res
-    if amt is not None and amt > 0 and _g["shut"] and ("short" if trade.is_short else "long") in GATE["sides"]:
-      _g["refused"].append((current_time.isoformat(), trade.pair, "add", "", round(float(amt), 2)))
-      return None
-    return res
-  NostalgiaForInfinityX8_507.adjust_trade_position = _atp
-
-import atexit, json as _json, os as _os
-@atexit.register
-def _gate_dump():
-  if _os.environ.get("GATE_LOG"):
-    _json.dump({"gate": GATE, "events": _g["events"], "state": _g["state"], "refused": _g["refused"]}, open(_os.environ["GATE_LOG"], "w"))
+@_sx.register
+def _st_dump():
+  if _so.environ.get("GATE_LOG"):
+    _sj.dump(_st, open(_so.environ["GATE_LOG"], "w"), default=str)
