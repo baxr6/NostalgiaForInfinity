@@ -61,13 +61,13 @@ jobs:
         run: |
           docker run --rm --network none -v "$PWD:/w" -w /w --entrypoint "" \
             -e FT_MARKETS_FILE=/w/rw507/mk/markets_rw.json -e PYTHONPATH=/w/rw507/mk -e EXPORT=${{ matrix.ex || 'trades' }} \
-            -e XC=${{ matrix.xc || 'binance' }} -e FT_TIERS_FILE=/w/rw507/mk/tiers_rw.json \
+            -e XC=${{ matrix.xc || 'binance' }} -e FT_TIERS_FILE=/w/rw507/mk/tiers_rw.json -e TR_OVR=${{ matrix.tr || '' }} \
             ghcr.io/iterativv/ci-strategy-backtesting@sha256:d407a1563f586a50bbc52b6e512cedc65cfc8d9681e5bf5391186f9747d953a0 \
             bash rw507/run_gh.sh "${{ matrix.arm }}" "${{ matrix.y }}" "${{ matrix.s }}"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: rw-${{ matrix.arm }}-${{ matrix.y }}-${{ matrix.s }}
+          name: rw-${{ matrix.arm }}-${{ matrix.y }}-${{ matrix.s }}${{ matrix.p && format('-{0}', matrix.p) || '' }}
           path: rw507/out/
           retention-days: 30
 

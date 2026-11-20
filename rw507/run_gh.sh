@@ -7,6 +7,8 @@ mkdir -p $O/ud
 # XC=bybit: Bybit data, slices and exchange (default binance, unchanged)
 XC=${XC:-binance}; SL=slices.json; [ $XC = bybit ] && SL=slices_bybit.json; export GATE_LOG=$O/gate.json
 read TR PAIRS < <(python3 -c "import json;d=json.load(open('$RW/$SL'))['$Y'];print(d['range'],json.dumps(d['slices'][$S]).replace(' ',''))")
+# optional matrix.tr (period test): timerange override inside the same year data
+[ -n "${TR_OVR:-}" ] && TR=$TR_OVR
 echo "{\"pairlists\":[{\"method\":\"StaticPairList\"}],\"exchange\":{\"name\":\"$XC\",\"pair_whitelist\":$PAIRS,\"pair_blacklist\":[]}}" > $O/pl.json
 echo "=== $ARM $Y s$S $TR start $(date -u +%T)"
 freqtrade backtesting --config $RW/cfg/exampleconfig.json --config $RW/cfg/trading_mode-futures.json --config $RW/cfg/$CFG \
