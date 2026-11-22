@@ -50,7 +50,7 @@ jobs:
           if [ -f dl/tiers_bybit_rw.json.zst ]; then zstd -dq dl/tiers_bybit_rw.json.zst -o rw507/mk/tiers_rw.json; fi
           rm -rf dl && wait && chmod -R a+rwX rw507 data
       - name: Swap (F)
-        if: matrix.y == 'F'
+        if: matrix.y == 'F' || matrix.y == 'G'
         run: |
           sudo swapoff -a || true; sudo rm -f /mnt/swapfile || true
           D=/; [ -d /mnt ] && [ $(df -BG --output=avail /mnt | tail -1 | tr -dc 0-9) -gt $(df -BG --output=avail / | tail -1 | tr -dc 0-9) ] && D=/mnt
