@@ -4,6 +4,16 @@ set -u; ARM=$1; Y=$2; S=$3; export RW=/w/rw507; O=$RW/out/$ARM/${Y}_$S
 # arms named bk* run the NFI book config (6 slots, unlimited stake, 10,000 wallet)
 CFG=rw.json; [[ $ARM == bk* ]] && CFG=book.json
 mkdir -p $O/ud
+# arms named speed*: paired populate_indicators CPU timing (rw507/speed), no backtest
+if [[ $ARM == speed* ]]; then
+  XC=${XC:-binance}; P=$RW/speed
+  echo "{\"exchange\":{\"name\":\"$XC\",\"pair_whitelist\":[],\"pair_blacklist\":[]}}" > $O/pl.json
+  nproc; lscpu | grep -E "Model name|^CPU\(s\)"
+  OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 $P/ab_pop.py $O /w/data/$XC 40 \
+    $RW/cfg/exampleconfig.json,$RW/cfg/trading_mode-futures.json,$RW/cfg/rw.json,$O/pl.json \
+    up=$P/up302 c14=$P/c14 c14no1h=$P/c14no1h c507=$P/c507 c507no1h=$P/c507no1h 2>&1 | grep -v chown | tee $O/run.log
+  exit ${PIPESTATUS[0]}
+fi
 # XC=bybit: Bybit data, slices and exchange (default binance, unchanged)
 XC=${XC:-binance}; SL=slices.json; [ $XC = bybit ] && SL=slices_bybit.json; export GATE_LOG=$O/gate.json
 read TR PAIRS < <(python3 -c "import json;d=json.load(open('$RW/$SL'))['$Y'];print(d['range'],json.dumps(d['slices'][$S]).replace(' ',''))")
