@@ -7,7 +7,7 @@ mkdir -p $O/ud
 # arms named speed*: paired populate_indicators CPU timing (rw507/speed), no backtest
 if [[ $ARM == speed* ]]; then
   XC=${XC:-binance}; P=$RW/speed
-  echo "{\"exchange\":{\"name\":\"$XC\",\"pair_whitelist\":[],\"pair_blacklist\":[]}}" > $O/pl.json
+  echo "{\"user_data_dir\":\"$O/ud\",\"exchange\":{\"name\":\"$XC\",\"pair_whitelist\":[],\"pair_blacklist\":[]}}" > $O/pl.json
   nproc; lscpu | grep -E "Model name|^CPU\(s\)"
   OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 $P/ab_pop.py $O /w/data/$XC 40 \
     $RW/cfg/exampleconfig.json,$RW/cfg/trading_mode-futures.json,$RW/cfg/rw.json,$O/pl.json \

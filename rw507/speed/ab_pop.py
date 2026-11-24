@@ -26,6 +26,7 @@ class DP(DataProvider):
   def current_whitelist(self): return pairs
 S = {}
 for name, d in V:
+  os.makedirs(Path(out) / "ud" / name, exist_ok=True)
   cfg = Configuration.from_files(cfgs)
   cfg.update(strategy="NostalgiaForInfinityX8", strategy_path=d, runmode=RunMode.BACKTEST, datadir=datadir, timeframe="5m",
              user_data_dir=Path(out) / "ud" / name)
