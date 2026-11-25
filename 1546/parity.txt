@@ -1,6 +1,10 @@
-Off-arm parity, signal 507 (#1546)
-head 8ae121675 with short_entry_condition_507_enable False  vs  main v18.0.248 (e754f6980)
-match key per trade: window, pair, open date, close date, entry tag, exit reason, profit (6 dp)
+Off-arm parity, signal 507
+head 41204a438 with short_entry_condition_507_enable False  vs  main v18.0.305 (d5c524e4c)
+match key per trade: window, pair, open date, close date, entry tag, exit reason, profit (6 dp); all pairs, before the blacklist filter
 
-60 slots (stake 1,000, wallet 100,000):  82 / 82 windows, 7,504 / 7,504 trades identical, net +424,701.39 / +424,701.39, 0 only in head, 0 only in main
-book (NFI exampleconfig, 6 slots):       82 / 82 windows, 7,228 / 7,228 trades identical, net +1,366,786.81 / +1,366,786.81, 0 only in head, 0 only in main
+60 slots (stake 1,000, wallet 100,000):  82 / 82 windows, 10,730 / 10,730 trades identical, net +334,203.74 / +334,203.74
+book (NFI exampleconfig, 6 slots):       82 / 82 windows, 10,425 / 10,425 trades identical, net +885,522.54 / +885,522.54
+
+Entries per candle (enter_long, enter_short, enter_tag), 17 bybit pairs, 2025-06-01 -> 2026-03-01, code defaults:
+507 off vs main v18.0.305:          1,336,608 candles, 0 differ, no BTC *_1h columns
+507 on vs ungated BTC 1h version:   1,336,608 candles, 0 differ, 315 / 315 signal 507 entries

@@ -1,0 +1,7 @@
+populate_indicators CPU per pair, this head vs main v18.0.305 (d5c524e4c), signal 14 off and on
+paired: all versions loaded in one process, called in a shuffled order every call; 40 repeats x 6 bybit pairs = 240 calls per version
+live-sized frames: 5m 1,500 rows, informatives 1,000 rows; CPU time (process_time); median of paired differences, 95 % bootstrap interval
+
+main v18.0.305                      47.08 ms
+signal 14 off (default)              +0.95 ms [+0.74, +1.28]   +2.0 %    btc_info_timeframes ['4h'] (as main)
+signal 14 on                         +4.98 ms [+4.62, +5.33]   +10.6 %   btc_info_timeframes ['1h', '4h']
