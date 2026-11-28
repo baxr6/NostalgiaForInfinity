@@ -2,7 +2,7 @@
 # GitHub runner version of run.sh: ARM YEAR SLICE, data in /w/data, markets offline (FT_MARKETS_FILE), output in rw507/out.
 set -u; ARM=$1; Y=$2; S=$3; export RW=/w/rw507; O=$RW/out/$ARM/${Y}_$S
 # arms named bk* run the NFI book config (6 slots, unlimited stake, 10,000 wallet)
-CFG=rw.json; [[ $ARM == bk* ]] && CFG=book.json; [[ $ARM == fw* ]] && CFG=fwd.json
+CFG=rw.json; [[ $ARM == bk* ]] && CFG=book.json; [[ $ARM == fw* ]] && CFG=fwd.json ; [[ $ARM == fd* ]] && CFG=fwdef.json
 # arms named fw* run the forward-test config (20 slots, unlimited stake, 10,000 wallet, all signals on); slice "all" = every pair of the year
 mkdir -p $O/ud
 # arms named speed*: paired populate_indicators CPU timing (rw507/speed), no backtest
