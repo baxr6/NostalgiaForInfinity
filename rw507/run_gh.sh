@@ -2,7 +2,8 @@
 # GitHub runner version of run.sh: ARM YEAR SLICE, data in /w/data, markets offline (FT_MARKETS_FILE), output in rw507/out.
 set -u; ARM=$1; Y=$2; S=$3; export RW=/w/rw507; O=$RW/out/$ARM/${Y}_$S
 # arms named bk* run the NFI book config (6 slots, unlimited stake, 10,000 wallet)
-CFG=rw.json; [[ $ARM == bk* ]] && CFG=book.json
+CFG=rw.json; [[ $ARM == bk* ]] && CFG=book.json; [[ $ARM == fw* ]] && CFG=fwd.json
+# arms named fw* run the forward-test config (20 slots, unlimited stake, 10,000 wallet, all signals on); slice "all" = every pair of the year
 mkdir -p $O/ud
 # arms named speed*: paired populate_indicators CPU timing (rw507/speed), no backtest
 if [[ $ARM == speed* ]]; then
@@ -16,7 +17,11 @@ if [[ $ARM == speed* ]]; then
 fi
 # XC=bybit: Bybit data, slices and exchange (default binance, unchanged)
 XC=${XC:-binance}; SL=slices.json; [ $XC = bybit ] && SL=slices_bybit.json; export GATE_LOG=$O/gate.json
-read TR PAIRS < <(python3 -c "import json;d=json.load(open('$RW/$SL'))['$Y'];print(d['range'],json.dumps(d['slices'][$S]).replace(' ',''))")
+if [ "$S" = all ]; then
+  read TR PAIRS < <(python3 -c "import json;d=json.load(open('$RW/$SL'))['$Y'];print(d['range'],json.dumps(sorted({p for x in d['slices'] for p in x})).replace(' ',''))")
+else
+  read TR PAIRS < <(python3 -c "import json;d=json.load(open('$RW/$SL'))['$Y'];print(d['range'],json.dumps(d['slices'][$S]).replace(' ',''))")
+fi
 # optional matrix.tr (period test): timerange override inside the same year data
 [ -n "${TR_OVR:-}" ] && TR=$TR_OVR
 echo "{\"pairlists\":[{\"method\":\"StaticPairList\"}],\"exchange\":{\"name\":\"$XC\",\"pair_whitelist\":$PAIRS,\"pair_blacklist\":[]}}" > $O/pl.json
