@@ -746,10 +746,15 @@ class NostalgiaForInfinityX8(IStrategy):
   bad_trade_controller_structure_break_exit_enable = True
   bad_trade_controller_structure_break_ema_gap_pct = 35.0
   bad_trade_controller_structure_break_min_adverse_move_pct = 25.0
-  bad_trade_controller_stale_exit_enable = True
+  bad_trade_controller_stale_exit_enable = False
   bad_trade_controller_stale_min_age_days = 100.0
   bad_trade_controller_stale_max_daily_range_pct = 7.0
   bad_trade_controller_stale_min_adverse_move_pct = 10.0
+  # Stake-days exit, in place of the stale exit. A losing trade is closed once its size (amount over the first
+  # fill) times its age in days reaches the limit, so a heavy grind is cut early and a small one is given time.
+  bad_trade_controller_stake_days_exit_enable = True
+  bad_trade_controller_stake_days_limit = 30.0
+  bad_trade_controller_stake_days_min_adverse_move_pct = 10.0
   # De-risk hold. A position that reaches a de-risk level while its own daily trend is still intact
   # is usually an overshoot that comes back; one that reaches it during a real daily breakdown is
   # not. Measured on the seven-year gms0 baseline with the ladder's real fires: the one fire the
@@ -1223,6 +1228,9 @@ class NostalgiaForInfinityX8(IStrategy):
       "bad_trade_controller_stale_min_age_days",
       "bad_trade_controller_stale_max_daily_range_pct",
       "bad_trade_controller_stale_min_adverse_move_pct",
+      "bad_trade_controller_stake_days_exit_enable",
+      "bad_trade_controller_stake_days_limit",
+      "bad_trade_controller_stake_days_min_adverse_move_pct",
       "bad_trade_controller_derisk_hold_enable",
       "bad_trade_controller_derisk_hold_short_enable",
       "bad_trade_controller_derisk_hold_roc_9_1d",
@@ -1754,7 +1762,7 @@ class NostalgiaForInfinityX8(IStrategy):
     last_candle,
     filled_entries: "Orders",
   ) -> Optional[str]:
-    """Return a structure-break or stale-position exit reason."""
+    """Return a structure-break, stale-position or stake-days exit reason."""
     daily_ema_gap_pct, first_entry_adverse_move_pct = self._bad_trade_controller_ema_gap_and_adverse_move(
       trade, current_rate, last_candle, filled_entries
     )
@@ -1779,6 +1787,15 @@ class NostalgiaForInfinityX8(IStrategy):
       and trade_age_days >= self.bad_trade_controller_stale_min_age_days
     ):
       return f"exit_bad_trade_abandon_{trade_age_days:.0f}d"
+
+    first_entry_amount = filled_entries[0].safe_filled if filled_entries else 0.0
+    if (
+      self.bad_trade_controller_stake_days_exit_enable
+      and first_entry_amount > 0.0
+      and first_entry_adverse_move_pct >= self.bad_trade_controller_stake_days_min_adverse_move_pct
+      and (trade.amount / first_entry_amount) * trade_age_days >= self.bad_trade_controller_stake_days_limit
+    ):
+      return f"exit_bad_trade_stake_days_{trade_age_days:.0f}d"
     return None
 
   def _bad_trade_controller_derisk_hold(self, last_candle, is_short: bool = False) -> bool:
